@@ -139,7 +139,7 @@ def chiffrer_dossier(cle: bytes, taille_nonce: int) -> None:
 
     # compresser le dossier en un fichier zip temporaire
     with zipfile.ZipFile(zip_nom, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for root, truc, files in os.walk(nom_dossier):
+        for root, _, files in os.walk(nom_dossier):
             for file in files:
                 filepath = os.path.join(root, file)
                 zipf.write(filepath, os.path.relpath(filepath, nom_dossier))
@@ -179,6 +179,35 @@ def chiffrement() -> None:
         print("Choix invalide.")
 
 
+def dechiffrer(data: bytes, cle: bytes, taille_nonce: int) -> bytes | None:
+    """
+    Déchiffre les données avec l'algorithme ChaCha20 en prenant en argument
+    les données à déchiffrer, la clé de déchiffrement et la taille du nonce.
+    Renvoie None si le déchiffrement est impossible
+
+    :param data: Les données à déchiffrer
+    :param cle: La clé de déchiffrement
+    :param taille_nonce: La taille du nonce utilisé
+    :return: Les données déchiffrés ou None si erreur
+    """
+    # le nonce l'as pas toujours la même taille, on le récupère en fonction de la taille définie
+    nonce = data[:taille_nonce]
+    tag = data[taille_nonce: taille_nonce + 16]
+    ciphertext = data[taille_nonce + 16:]
+    cipher = ChaCha20_Poly1305.new(key=cle, nonce=nonce)
+    donnees = None
+    try:
+        donnees = cipher.decrypt_and_verify(ciphertext, tag)
+    except ValueError:
+        print("Échec de la vérification du tag. Le message peut avoir été altéré.")
+    return donnees
+
+
+assert dechiffrer(b64decode("UVNJWHYifRpuXyqmt3EFGkyKs6WhzbFMSmC0GMVyOwY="),
+                  b64decode("jXgGOPjUipRoY+qR+u4AUjfItE1NX8P81DY7o47YTvg="),
+                  12) == b'True'
+
+
 def dechiffrer_message(cle: bytes, taille_nonce: int) -> None:
     """
     déchiffrer un message chiffré en base64 avec la clé donnée et afficher le message déchiffré.
@@ -188,17 +217,11 @@ def dechiffrer_message(cle: bytes, taille_nonce: int) -> None:
     """
     data_b64 = input("Entrez le message chiffré en base64 : ")
     data = b64decode(data_b64)
-    # le nonce l'as pas toujours la même taille, on le récupère en fonction de la taille définie
-    nonce = data[:taille_nonce]
-    tag = data[taille_nonce: taille_nonce + 16]
-    ciphertext = data[taille_nonce + 16:]
-    cipher = ChaCha20_Poly1305.new(key=cle, nonce=nonce)
-    try:
-        plaintext = cipher.decrypt_and_verify(ciphertext, tag)
-        print("Message déchiffré :")
-        print(plaintext.decode("utf-8"))
-    except ValueError:
-        print("Échec de la vérification du tag. Le message peut avoir été altéré.")
+    plaintext = dechiffrer(data, cle, taille_nonce)
+    if plaintext is None:
+        return
+    print("Message déchiffré :")
+    print(plaintext.decode("utf-8"))
 
 
 def lire_fichier_chiffre(fichier: str) -> bytes | None:
@@ -234,12 +257,9 @@ def dechiffrer_fichier(cle: bytes, taille_nonce: int) -> None:
     data = lire_fichier_chiffre(nom_fichier)
     if data is None:
         return
-    # le nonce l'as pas toujours la même taille, on le récupère en fonction de la taille définie
-    nonce = data[:taille_nonce]
-    tag = data[taille_nonce: taille_nonce + 16]
-    ciphertext = data[taille_nonce + 16:]
-    cipher = ChaCha20_Poly1305.new(key=cle, nonce=nonce)
-    plaintext = cipher.decrypt_and_verify(ciphertext, tag)
+    plaintext = dechiffrer(data, cle, taille_nonce)
+    if plaintext is None:
+        return
 
     with open(nom_fichier.replace(".chiffre", ""), "wb") as f:
         _ = f.write(plaintext)
@@ -283,25 +303,20 @@ def dechiffrer_dossier(cle: bytes, taille_nonce: int) -> None:
     if data is None:
         return
 
-    # le nonce n'a pas toujours la même taille, on le récupère en fonction de la taille
-    nonce = data[:taille_nonce]
-    tag = data[taille_nonce: taille_nonce + 16]
-    ciphertext = data[taille_nonce + 16:]
-    cipher = ChaCha20_Poly1305.new(key=cle, nonce=nonce)
-    try:
-        plaintext = cipher.decrypt_and_verify(ciphertext, tag)
-        zip_nom = dossier.replace(".chiffre", "")
-        with open(zip_nom, "wb") as f:
-            _ = f.write(plaintext)
-        # extraire le fichier zip
-        with zipfile.ZipFile(zip_nom, "r") as zipf:
-            zipf.extractall(dossier.replace(".zip.chiffre", ""))
-        os.remove(zip_nom)  # supprimer le fichier zip temporaire
-        print(
-            f"Dossier déchiffré et extrait sous {dossier.replace('.zip.chiffre', '')}"
-        )
-    except ValueError:
-        print("Échec de la vérification du tag. Le dossier peut avoir été altéré.")
+    plaintext = dechiffrer(data, cle, taille_nonce)
+    if plaintext is None:
+        return
+
+    zip_nom = dossier.replace(".chiffre", "")
+    with open(zip_nom, "wb") as f:
+        _ = f.write(plaintext)
+    # extraire le fichier zip
+    with zipfile.ZipFile(zip_nom, "r") as zipf:
+        zipf.extractall(dossier.replace(".zip.chiffre", ""))
+    os.remove(zip_nom)  # supprimer le fichier zip temporaire
+    print(
+        f"Dossier déchiffré et extrait sous {dossier.replace('.zip.chiffre', '')}"
+    )
 
 
 def dechiffrement() -> None:
