@@ -9,6 +9,7 @@ utilisant l'algorithme ChaCha20 Poly1305
 import os
 import zipfile
 from base64 import b64decode, b64encode
+import binascii
 from hashlib import sha256
 
 from Crypto.Cipher import ChaCha20_Poly1305
@@ -26,8 +27,21 @@ def charger_cle() -> tuple[bytes | None, int | None]:
         return None, None
 
     with open("cle.txt", "r") as f:
-        cle: bytes = b64decode(f.readline().strip())
+        try:
+            cle: bytes = b64decode(f.readline().strip())
+        except binascii.Error as e:
+            print(e)
+            return None, None
         taille_nonce: int = int(f.readline().strip())
+
+    if not (taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24):
+        print("La taille du nonce est invalide, il doit être égal à 8, 12 ou 24")
+        return None, None
+
+    if len(cle) != 32:
+        print("Clé invalide : La clé doit faire 32 octets (256 bits).")
+        return None, None
+
     return cle, taille_nonce
 
 
@@ -39,6 +53,9 @@ def enregistrer_cle(cle: bytes, taille_nonce: int) -> None:
     :param cle: la clé à enregistrer
     :param taille_nonce: la taille du nonce utilisée pour le chiffrement
     """
+    assert type(cle) is bytes and len(cle) == 32, "Clé invalide"
+    assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
+
     with open("cle.txt", "w") as f:
         _ = f.write(b64encode(cle).decode("utf-8") + "\n")
         _ = f.write(str(taille_nonce) + "\n")
@@ -94,6 +111,9 @@ def chiffrer_message(cle: bytes, taille_nonce: int) -> None:
     :param cle: La clé de chiffrement
     :param taille_nonce: La taille du nonce utilisée pour le chiffrement
     """
+    assert type(cle) is bytes and len(cle) == 32, "Clé invalide"
+    assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
+
     message = input("Entrez le message à chiffrer : ").encode("utf-8")
     nonce = get_random_bytes(taille_nonce)
     cipher = ChaCha20_Poly1305.new(key=cle, nonce=nonce)
@@ -110,6 +130,9 @@ def chiffrer_fichier(cle: bytes, taille_nonce: int) -> None:
     :param cle: la clé de chiffrement
     :param taille_nonce: la taille du nonce utilisée pour le chiffrement
     """
+    assert type(cle) is bytes and len(cle) == 32, "Clé invalide"
+    assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
+
     nom_fichier = input("Entrez le nom du fichier à chiffrer : ")
 
     with open(nom_fichier, "rb") as f:
@@ -134,6 +157,9 @@ def chiffrer_dossier(cle: bytes, taille_nonce: int) -> None:
     :param cle: La clé de chiffrement
     :param taille_nonce: La taille du nonce utilisée pour le chiffrement
     """
+    assert type(cle) is bytes and len(cle) == 32, "Clé invalide"
+    assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
+
     nom_dossier = input("Entrez le nom du dossier à chiffrer : ")
     zip_nom = nom_dossier + ".zip"
 
@@ -190,16 +216,21 @@ def dechiffrer(data: bytes, cle: bytes, taille_nonce: int) -> bytes | None:
     :param taille_nonce: La taille du nonce utilisé
     :return: Les données déchiffrés ou None si erreur
     """
+    assert type(cle) is bytes and len(cle) == 32, "Clé invalide"
+    assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
+    assert type(data) is bytes and len(data) > taille_nonce + 16
+
     # le nonce l'as pas toujours la même taille, on le récupère en fonction de la taille définie
-    nonce = data[:taille_nonce]
-    tag = data[taille_nonce: taille_nonce + 16]
-    ciphertext = data[taille_nonce + 16:]
+    nonce: bytes = data[:taille_nonce]
+    tag: bytes = data[taille_nonce: taille_nonce + 16]
+    ciphertext: bytes = data[taille_nonce + 16:]
     cipher = ChaCha20_Poly1305.new(key=cle, nonce=nonce)
     donnees = None
     try:
         donnees = cipher.decrypt_and_verify(ciphertext, tag)
     except ValueError:
-        print("Échec de la vérification du tag. Le message peut avoir été altéré.")
+        print("Échec de la vérification du tag. Le message peut avoir été altéré ou être chiffré avec une clé "
+              "différente.")
     return donnees
 
 
@@ -215,6 +246,9 @@ def dechiffrer_message(cle: bytes, taille_nonce: int) -> None:
     :param cle: La clé de déchiffrement
     :param taille_nonce: La taille du nonce utilisée pour le chiffrement
     """
+    assert type(cle) is bytes and len(cle) == 32, "Clé invalide"
+    assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
+
     data_b64 = input("Entrez le message chiffré en base64 : ")
     data = b64decode(data_b64)
     plaintext = dechiffrer(data, cle, taille_nonce)
@@ -235,6 +269,8 @@ def lire_fichier_chiffre(fichier: str) -> bytes | None:
     === Retourne ===
     :return: les données du fichier chiffré, ou None si le fichier n'existe pas
     """
+    assert type(fichier) is str
+
     if not fichier.endswith(".chiffre"):
         fichier += ".chiffre"
     if not os.path.exists(fichier):
@@ -242,6 +278,8 @@ def lire_fichier_chiffre(fichier: str) -> bytes | None:
         return None
     with open(fichier, "rb") as f:
         data = f.read()
+
+    assert type(data) is bytes
     return data
 
 
@@ -253,6 +291,9 @@ def dechiffrer_fichier(cle: bytes, taille_nonce: int) -> None:
     :param cle: la clé de déchiffrement
     :param taille_nonce: la taille du nonce utilisée pour le chiffrement
     """
+    assert type(cle) is bytes and len(cle) == 32, "Clé invalide"
+    assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
+
     nom_fichier = input("Entrez le nom du fichier à déchiffrer : ")
     data = lire_fichier_chiffre(nom_fichier)
     if data is None:
@@ -279,6 +320,8 @@ def lire_dossier_chiffre(dossier: str) -> bytes | None:
     === Retourne ===
     :return: retourne les données du dossier chiffré, ou None si le fichier n'existe pas
     """
+    assert type(dossier) is str
+
     if not dossier.endswith(".zip.chiffre"):
         dossier += ".zip.chiffre"
     if not os.path.exists(dossier):
@@ -286,6 +329,8 @@ def lire_dossier_chiffre(dossier: str) -> bytes | None:
         return None
     with open(dossier, "rb") as f:
         data = f.read()
+
+    assert type(data) is bytes
     return data
 
 
@@ -298,6 +343,9 @@ def dechiffrer_dossier(cle: bytes, taille_nonce: int) -> None:
     :param cle: la clé de déchiffrement
     :param taille_nonce: la taille du nonce utilisée pour le chiffrement
     """
+    assert type(cle) is bytes and len(cle) == 32, "Clé invalide"
+    assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
+
     dossier = input("Entrez le nom du dossier à déchiffrer (fichier .zip.chiffre) : ")
     data = lire_dossier_chiffre(dossier)
     if data is None:
@@ -349,6 +397,8 @@ def select_option(choice: str) -> bool:
     === Retourne ===
     :return: True si l'utilisateur continue, sinon False
     """
+    assert type(choice) is str
+
     match choice:
         case "1":
             chiffrement()
@@ -378,4 +428,7 @@ def menu() -> None:
 
 
 if __name__ == "__main__":
-    menu()
+    try:
+        menu()
+    except KeyboardInterrupt:
+        print("\nau revoir")
