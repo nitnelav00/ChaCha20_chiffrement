@@ -53,6 +53,7 @@ def enregistrer_cle(cle: bytes, taille_nonce: int) -> None:
     :param cle: la clé à enregistrer
     :param taille_nonce: la taille du nonce utilisée pour le chiffrement
     """
+    assert type(cle) is bytes and len(cle) == 32, "Clé invalide"
     assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
 
     with open("cle.txt", "w") as f:
@@ -85,9 +86,6 @@ def nouvelle_cle() -> None:
         cle: str = input("Entrez la clé en base64 : ")
         # vérifier que la clé est valide
         cle2: bytes = b64decode(cle)
-        if len(cle) != 32:
-            print("Clé invalide : La clé doit faire 32 octets (256 bits).")
-            return
         enregistrer_cle(cle2, taille_nonce)
     elif choix == "2":
         cle3: bytes = get_random_bytes(32)  # XChaCha20 requires a 256-bit (32-byte) key
