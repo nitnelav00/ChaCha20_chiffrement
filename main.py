@@ -53,7 +53,6 @@ def enregistrer_cle(cle: bytes, taille_nonce: int) -> None:
     :param cle: la clé à enregistrer
     :param taille_nonce: la taille du nonce utilisée pour le chiffrement
     """
-    assert type(cle) is bytes and len(cle) == 32, "Clé invalide"
     assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
 
     with open("cle.txt", "w") as f:
