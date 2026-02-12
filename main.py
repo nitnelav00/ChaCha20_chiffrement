@@ -132,6 +132,12 @@ def chiffrer_fichier(cle: bytes, taille_nonce: int) -> None:
 
     nom_fichier = input("Entrez le nom du fichier à chiffrer : ")
 
+    if not os.path.exists(nom_fichier):
+        nom_fichier = nom_fichier.removeprefix("'").removesuffix(" ").removesuffix("'")
+        print(nom_fichier)
+    if not os.path.exists(nom_fichier):
+        print("le fichier n'existe pas")
+        return
     with open(nom_fichier, "rb") as f:
         data = f.read()
 
@@ -158,6 +164,12 @@ def chiffrer_dossier(cle: bytes, taille_nonce: int) -> None:
     assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
 
     nom_dossier = input("Entrez le nom du dossier à chiffrer : ")
+    if not os.path.exists(nom_dossier):
+        nom_dossier = nom_dossier.removeprefix("'").removesuffix(" ").removesuffix("'")
+        print(nom_dossier)
+    if not os.path.exists(nom_dossier):
+        print("le fichier n'existe pas")
+        return
     zip_nom = nom_dossier + ".zip"
 
     # compresser le dossier en un fichier zip temporaire
@@ -268,11 +280,16 @@ def lire_fichier_chiffre(fichier: str) -> bytes | None:
     """
     assert type(fichier) is str
 
+    if not os.path.exists(fichier):
+        fichier = fichier.removeprefix("'").removesuffix(" ").removesuffix("'")
+        print(fichier)
+    if not os.path.exists(fichier):
+        print("le fichier n'existe pas")
+        return None
+
     if not fichier.endswith(".chiffre"):
         fichier += ".chiffre"
-    if not os.path.exists(fichier):
-        print("Fichier non trouvé.")
-        return None
+
     with open(fichier, "rb") as f:
         data = f.read()
 
@@ -292,6 +309,14 @@ def dechiffrer_fichier(cle: bytes, taille_nonce: int) -> None:
     assert taille_nonce == 12 or taille_nonce == 8 or taille_nonce == 24
 
     nom_fichier = input("Entrez le nom du fichier à déchiffrer : ")
+
+    if not os.path.exists(nom_fichier):
+        nom_fichier = nom_fichier.removeprefix("'").removesuffix(" ").removesuffix("'")
+        print(nom_fichier)
+    if not os.path.exists(nom_fichier):
+        print("le fichier n'existe pas")
+        return
+
     data = lire_fichier_chiffre(nom_fichier)
     if data is None:
         return
@@ -318,6 +343,13 @@ def lire_dossier_chiffre(dossier: str) -> bytes | None:
     :return: retourne les données du dossier chiffré, ou None si le fichier n'existe pas
     """
     assert type(dossier) is str
+
+    if not os.path.exists(dossier):
+        dossier = dossier.removeprefix("'").removesuffix(" ").removesuffix("'")
+        print(dossier)
+    if not os.path.exists(dossier):
+        print("le fichier n'existe pas")
+        return None
 
     if not dossier.endswith(".zip.chiffre"):
         dossier += ".zip.chiffre"
