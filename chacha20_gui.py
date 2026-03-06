@@ -26,7 +26,11 @@ def get_taille_nonce() -> int:
     with open("cle.txt", "r") as f:
         lines = f.readlines()
         if len(lines) >= 2:
-            return int(lines[1].strip())
+            taille_nonce = int(lines[1].strip())
+            if taille_nonce == 8 or taille_nonce == 12 or taille_nonce == 24:
+                return taille_nonce
+            else:
+                messagebox.showwarning("taille du nonce invalide", "La taille du nonce est invalide. Utilisation de la taille par défaut (12).")
     return 12  # Valeur par défaut si la clé n'est pas trouvée ou mal formatée
 
 
@@ -134,6 +138,8 @@ class Chiffrer(Tk):
                 messagebox.showinfo("Succès", f"Fichier {nom_fichier} chiffré avec succès !")
             else:
                 messagebox.showerror("Erreur", f"Une erreur est survenue lors du chiffrement du fichier {nom_fichier}.")
+        else:
+            messagebox.showerror("Fichier non séléctionné", "Aucun fichier n'a été séléctionné.")
 
     def chiffrer_texte(self):
         # Fonction pour chiffrer du texte
@@ -262,7 +268,7 @@ class MotDePasse(Tk):
         self.label.pack(pady=10)
         self.taille_nonce_label = Label(self, text="Taille du nonce (en octets, généralement 12 pour ChaCha20):")
         self.taille_nonce_label.pack(pady=5)
-        nonce_values = ["8", "12", "16"]
+        nonce_values = ["8", "12", "24"]
         self.taille_nonce = ttk.Combobox(self, values=nonce_values, state="readonly")
         self.taille_nonce.current(1)  # Sélectionne 12 par défaut
         self.taille_nonce.pack(pady=5)
@@ -300,7 +306,7 @@ class GenererCles(Tk):
         self.label.pack(pady=10)
         self.taille_nonce_label = Label(self, text="Taille du nonce (en octets, généralement 12 pour ChaCha20):")
         self.taille_nonce_label.pack(pady=5)
-        nonce_values = ["8", "12", "16"]
+        nonce_values = ["8", "12", "24"]
         self.taille_nonce = ttk.Combobox(self, values=nonce_values, state="readonly")
         self.taille_nonce.current(1)  # Sélectionne 12 par défaut
         self.taille_nonce.pack(pady=5)
