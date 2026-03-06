@@ -23,6 +23,8 @@ from tkinter import Tk, Label, Entry, Button, Text, END, filedialog, messagebox,
 
 def get_taille_nonce() -> int:
     # la taille du nonce est indiquée dans la deuxième ligne du fichier de la clé
+    if not os.path.exists("cle.txt"):
+        messagebox.showerror("Aucune clé trouvé", "Aucune clé trouvée. Assurez vous d'avoir une clé enregistrée dans cle.txt")
     with open("cle.txt", "r") as f:
         lines = f.readlines()
         if len(lines) >= 2:
@@ -36,6 +38,8 @@ def get_taille_nonce() -> int:
 
 def get_cle() -> bytes | None:
     # la clé est indiquée dans la première ligne du fichier de la clé
+    if not os.path.exists("cle.txt"):
+        messagebox.showerror("Aucune clé trouvé", "Aucune clé trouvée. Assurez vous d'avoir une clé enregistrée dans cle.txt")
     with open("cle.txt", "r") as f:
         lines = f.readlines()
         if len(lines) >= 1:
