@@ -1,2 +1,6 @@
 /cle.txt
 /.idea
+/dist/
+/build/
+/chacha20_gui.spec
+/chacha20_cli.spec

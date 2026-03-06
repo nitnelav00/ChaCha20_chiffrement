@@ -21,7 +21,7 @@ from Crypto.Random import get_random_bytes
 from tkinter import Tk, Label, Entry, Button, Text, END, filedialog, messagebox, ttk
 
 
-def get_taille_nonce():
+def get_taille_nonce() -> int:
     # la taille du nonce est indiquée dans la deuxième ligne du fichier de la clé
     with open("cle.txt", "r") as f:
         lines = f.readlines()
@@ -30,7 +30,7 @@ def get_taille_nonce():
     return 12  # Valeur par défaut si la clé n'est pas trouvée ou mal formatée
 
 
-def get_cle():
+def get_cle() -> bytes | None:
     # la clé est indiquée dans la première ligne du fichier de la clé
     with open("cle.txt", "r") as f:
         lines = f.readlines()
